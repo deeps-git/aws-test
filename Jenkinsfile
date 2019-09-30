@@ -22,7 +22,12 @@ pipeline {
                */
                echo 'Checking out bamboo_deployment_projects.git'
                git branch: 'master', credentialsId: 'testing', url: 'https://github.com/deeps-git/bamboo_deployment_projects.git'
-               echo "BUILD_BASE_PATH ${BUILD_BASE_PATH}"
+               echo "BUILD_BASE_PATH is ${BUILD_BASE_PATH}"
+               echo "BUILD_DIR is ${BUILD_DIR}"
+               echo "REPO_TO_BUILD is ${REPO_TO_BUILD}"
+               echo "BUILD_SCRIPTS_REPO is ${BUILD_SCRIPTS_REPO}"
+               echo "BUILD_MAVEN_PATH is ${BUILD_MAVEN_PATH}"
+               echo "REPO_URL is ${REPO_URL}"
              //sh 'cd /var/lib/jenkins/workspace/IpGatewayProvisioning-DevStage/CRPLSupportFunctions_scripts/workingSetup/ && ./gitpull.sh'
            }
            }
