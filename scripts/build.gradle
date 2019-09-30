@@ -1,0 +1,257 @@
+apply plugin: 'distribution'
+apply plugin: 'idea'
+
+ext {
+    //newline
+    nl = System.getProperty("line.separator")
+    parentDir = rootProject.projectDir.parent
+    parentProject = parentDir.substring(parentDir.lastIndexOf('/') + 1)
+}
+
+private void printUsage() {
+    println()
+    println("Usage: ")
+    println("   ../gradlew build -Plambdaname=<project name> -Planguage=<java or python> -Phandler=<optional: handler name>")
+    println()
+    println("Example: ")
+    println("   ../gradlew build -Plambdaname=MyLambdaProject -Planguage=java -Phandler=MyHandler")
+    println()
+}
+
+task usage {
+    printUsage()
+}
+
+/**
+ * For the settings.gradle include, dynamically get the list of subprojects
+ */
+task printSubprojects() {
+    subProjects = printSubprojects()
+    //println "$subProjects"
+}
+
+private String printSubprojects() {
+    def list = []
+    def dir = new File("$rootProject.projectDir.parent")
+    dir.eachFile(groovy.io.FileType.DIRECTORIES) { file ->
+        list << file.path
+    }
+
+    def subProjects = "include"
+    list.each { line ->
+        def filedir = line.substring(line.lastIndexOf('/') + 1)
+        //println filedir
+        if ( ! filedir.startsWith(".") &&
+             ! filedir.equals("gradle") &&
+             ! filedir.equals("scripts") )
+        {
+            subProjects += "\'$filedir\', $nl"
+        }
+    }
+
+    //Remove last comma
+    subProjects = subProjects.substring(0, subProjects.lastIndexOf(','))
+    return subProjects
+
+}
+
+task createProject {
+
+    String lambdaname = null
+    String language = null
+    try {
+        lambdaname = project.getProperty('lambdaname')
+        language = project.getProperty('language')
+    } catch (Exception e) {
+        println("Script parameters not found.")
+        printUsage()
+        throw e
+    }
+
+    String handler = null
+    try {
+        handler = project.getProperty('handler')
+    } catch (Exception e) {
+        println("handler parameter is optional not found.")
+    }
+
+    println("Lambda project function name=" + lambdaname + " rootDir=" + rootDir + " rootProject().projectDir=" + rootProject.projectDir.parent)
+    if ( lambdaname == null || "".equals(lambdaname) ) {
+        println("Lambda project function name cannot be empty")
+        printUsage()
+        throw new GradleException('Error occurred Lambda project function name cannot be empty')
+    }
+
+    // Create a File object representing the project root folder
+    def folder = new File( rootProject.projectDir.parent + "/$lambdaname" )
+
+    // If already exists, exit
+    if( folder.exists() ) {
+        println("Lambda project " + lambdaname + " already exists!  Choose a different name.")
+        throw new GradleException("Lambda project " + lambdaname + " already exists!  Choose a different name.")
+    }
+
+    //Default is java
+    if ( language == null || "".equals(language) || "java".equalsIgnoreCase(language) ) {
+        createDirectories(rootProject.projectDir.parent, lambdaname, "java")
+
+        createJavaSource(handler, folder)
+        createGradleProperties(lambdaname, handler, folder, "java8")
+        createJavaBuildGradle(folder)
+
+    } else if ("python".equalsIgnoreCase(language)) {
+        createDirectories(rootProject.projectDir.parent, lambdaname, "python")
+        createGradleProperties(lambdaname, handler, folder, "python2.7")
+    } else {
+        printUsage()
+        throw new GradleException("Unsupported Lambda project type " + language)
+    }
+
+    updateSettingsGradle(lambdaname)
+
+
+}
+
+private void createDirectories(String rootDir, String lambdaFunctionName, String lambdaFunctionLanguage) {
+    def mainDir = new File("$rootDir/$lambdaFunctionName/src/main/$lambdaFunctionLanguage")
+    def testDir = new File("$rootDir/$lambdaFunctionName/src/test/$lambdaFunctionLanguage")
+    def mainResourcesDir = new File("$rootDir/$lambdaFunctionName/src/main/resources")
+    def testResourcesDir = new File("$rootDir/$lambdaFunctionName/src/test/resources")
+
+    mainDir.mkdirs()
+    testDir.mkdirs()
+    mainResourcesDir.mkdirs()
+    testResourcesDir.mkdirs()
+}
+
+private void createJavaSource(String handler, File folder) {
+//Create java Handler
+    if (handler != null && !handler.trim().equals("")) {
+
+        String source =
+                "import com.amazonaws.services.lambda.runtime.Context;$nl" +
+                        "import com.amazonaws.services.lambda.runtime.RequestHandler;$nl" +
+                        "import java.util.Map; $nl" +
+                        "import org.apache.log4j.Logger; $nl" +
+                        "$nl" +
+                        "public class $handler implements RequestHandler<Map<String, Object>, Object> {$nl" +
+                        "$nl" +
+                        "       static final Logger log = Logger.getLogger(" + handler + ".class);$nl" +
+                        "$nl" +
+                        "       @Override$nl" +
+                        "       public Map handleRequest(Map<String, Object> requestMap, Context context) {$nl" +
+                        "           return null;$nl" +
+                        "       }$nl" +
+                        "}$nl"
+        new File(folder, '/src/main/java/' + "$handler" + ".java").withWriterAppend { w ->
+            w << source
+        }
+
+    }
+}
+
+private void createGradleProperties(String lambdaname, String handler, File folder, String runtime) {
+//Create java Handler
+    if (handler != null && !handler.trim().equals("")) {
+
+        String source =
+                        "aws.runtime=$runtime$nl" +
+                        "aws.handler=<package + handler class name>$nl" +
+                        "aws.memory-size=512$nl" +
+                        "aws.timeout=60$nl" +
+                        "aws.description=<lambda description>$nl" +
+                        "aws.role=arn:aws:iam::747386316553:role/lambda_basic_vpc_execution$nl" +
+                        "aws.code=S3Bucket=crpl-lambda-functions,S3Key=code/$parentProject/$lambdaname/0-SNAPSHOT/$lambdaname-0-SNAPSHOT.zip$nl" +
+                        "#aws.vpc-config=SubnetIds=subnet-288d6e46,subnet-1c8d6e72,SecurityGroupIds=sg-1d2d9865"
+        new File(folder, '/gradle.properties').withWriterAppend { w ->
+            w << source
+        }
+
+    }
+}
+
+/**
+ * Common template for subproject's build.gradle
+ * @param folder
+ */
+private void createJavaBuildGradle(File folder) {
+    String source = "apply plugin: 'java'$nl" +
+            "$nl" +
+            "configurations {$nl" +
+            "    provided$nl" +
+            "    testRuntime.extendsFrom(provided)$nl" +
+            "}$nl" +
+            "$nl" +
+            "dependencies {$nl" +
+            "$nl" +
+            "    compile (group: 'com.amazonaws', name: 'aws-lambda-java-core', version: \"\$awsLambdaCoreVersion\") {$nl" +
+            "        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'$nl" +
+            "    }$nl" +
+            "    compile (group: 'com.amazonaws', name: 'aws-lambda-java-events', version: \"\$awsLambdaEventsVersion\") {$nl" +
+            "        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'$nl" +
+            "    }$nl" +
+            "    compile ($nl" +
+            "            [group: 'com.amazonaws', name: 'aws-lambda-java-log4j', version: \"\$awsLambdaLog4jVersion\"],$nl" +
+            "            [group: 'com.amazonaws', name: 'aws-java-sdk-core', version: \"\$awsSdkVersion\"],$nl" +
+            "            [group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: \"\$awsSdkVersion\"],$nl" +
+            "            [group: 'com.google.code.gson', name: 'gson', version: \"\$gsonVersion\"],$nl" +
+            "            [group: 'oauth.signpost', name: 'signpost-commonshttp4', version: \"\$oauthSignPostVersion\"],$nl" +
+            "            [group: 'log4j', name: 'log4j', version: \"\$log4jVersion\"]$nl" +
+            "    )$nl" +
+            "$nl" +
+            "    testCompile ($nl" +
+            "            [group: 'junit', name: 'junit', version: \"\$junitVersion\"],$nl" +
+            "            [group: 'org.powermock', name: 'powermock-api-mockito', version: \"\$powermockVersion\"],$nl" +
+            "            [group: 'org.powermock', name: 'powermock-module-junit4', version: \"\$powermockVersion\"]$nl" +
+            "    )$nl" +
+            "}$nl" +
+            "$nl" +
+            "task buildJavaZip(type: Zip) {$nl" +
+            "    from compileJava$nl" +
+            "    from processResources$nl" +
+            "    into('lib') {$nl" +
+            "        from configurations.runtime$nl" +
+            "    }$nl" +
+            "}$nl" +
+            "$nl" +
+            "build.dependsOn buildJavaZip$nl"
+    new File(folder, '/build.gradle').withWriterAppend { w ->
+        w << source
+    }
+}
+
+private void updateSettingsGradle(String lambdaname) {
+
+    def settingsNewGradle = new File(rootProject.projectDir.parent + "/settings_new.gradle")
+    if (settingsNewGradle.exists()) {
+        settingsNewGradle.delete()
+    }
+
+    def settingsGradle = new File(rootProject.projectDir.parent + "/settings.gradle")
+    settingsGradle.eachLine { line ->
+        if (line.startsWith("include")) {
+            line += ", \'$lambdaname\' $nl"
+            //println("printing existing include line=" + line)
+        }
+
+
+        settingsNewGradle.withWriterAppend { w ->
+            w << line + "$nl"
+            //println("printing settingsnewgradle line=" + line)
+        }
+    }
+
+    //Copy new into existing and overwrite
+    settingsGradle.delete()
+    settingsNewGradle.withInputStream { is ->
+        settingsGradle << is
+    }
+    settingsNewGradle.delete()
+}
+
+task build {
+    dependsOn createProject
+    //dependsOn cleanIdea
+    //dependsOn cleanIdeaWorkspace
+}
+

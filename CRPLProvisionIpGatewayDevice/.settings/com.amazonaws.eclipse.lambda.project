@@ -1,0 +1,5 @@
+#Lambda Function Project Metadata
+#Thu Apr 14 13:05:53 EDT 2016
+lastDeploymentFunctionName=XboProvisionIpGatewayDevice
+lastDeploymentBucketName=crpl-lambda-functions
+lastDeploymentEndpoint=https\://lambda.us-east-1.amazonaws.com/

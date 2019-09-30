@@ -1,0 +1,43 @@
+apply plugin: 'java'
+
+configurations {
+    provided
+    testRuntime.extendsFrom(provided)
+}
+
+dependencies {
+
+    compile (group: 'com.amazonaws', name: 'aws-lambda-java-core', version: "$awsLambdaCoreVersion") {
+        transitive = false
+    }
+    compile (group: 'com.amazonaws', name: 'aws-lambda-java-events', version: "$awsLambdaEventsVersion") {
+        transitive = false
+    }
+    compile (
+            [group: 'com.amazonaws', name: 'aws-lambda-java-log4j', version: "$awsLambdaLog4jVersion"],
+            [group: 'com.amazonaws', name: 'aws-java-sdk', version: "$awsSdkVersion"],
+            [group: 'com.amazonaws', name: 'aws-java-sdk-core', version: "$awsSdkVersion"],
+            [group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: "$awsSdkVersion"],
+            [group: 'com.google.code.gson', name: 'gson', version: "$gsonVersion"],
+            [group: 'oauth.signpost', name: 'signpost-commonshttp4', version: "$oauthSignPostVersion"],
+            [group: 'log4j', name: 'log4j', version: "$log4jVersion"],
+            [group: 'com.comcast.xcal.crpl.awslambda.support', name: 'CRPLAwsUtil', version: "$CRPLAwsUtilVersion", changing: true],
+            [group: 'org.apache.commons', name: 'commons-lang3', version: "$apacheCommonsVersion"]
+    )
+
+    testCompile (
+            [group: 'junit', name: 'junit', version: "$junitVersion"],
+            [group: 'org.powermock', name: 'powermock-api-mockito', version: "$powermockVersion"],
+            [group: 'org.powermock', name: 'powermock-module-junit4', version: "$powermockVersion"]
+    )
+}
+
+task buildJavaZip(type: Zip) {
+    from compileJava
+    from processResources
+    into('lib') {
+        from configurations.runtime
+    }
+}
+
+build.dependsOn buildJavaZip

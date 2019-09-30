@@ -1,0 +1,141 @@
+ext.githubProjectName = rootProject.name
+
+apply plugin: 'idea'
+
+ext {
+
+    groupId = "com.comcast.xcal.crpl.awslambda.support"
+    projectVersion = project.hasProperty("releaseVersion")?project.property("releaseVersion"):"0-SNAPSHOT"
+
+    //Third party
+    awsLambdaCoreVersion = "1.0.0"
+    awsLambdaEventsVersion = "1.1.0"
+    awsLambdaLog4jVersion = "1.0.0"
+    awsSdkVersion = "1.11.82"
+    gsonVersion = "2.2.4"
+    oauthSignPostVersion = "1.2.1.1"
+    log4jVersion = "1.2.17"
+    apachehttpclientVersion = "4.3.6"
+    apachehttpcoreVersion = "4.3.3"
+    apacheCommonsVersion = "3.3.1"
+
+    //crpl specific
+//    CRPLAwsUtilVersion = "1.1.11"
+    CRPLAwsUtilVersion = "1.2.3"
+    userServiceCommonsVersion = "1.0.81-a"
+
+    //test versions
+    junitVersion = "4.11"
+    powermockVersion = "1.6.4"
+
+    wsNotificationVersion = userServiceCommonsVersion
+
+}
+
+allprojects {
+
+    task testbuildall << { task -> println "Build $tasks.project.name" }
+    repositories {
+        //mavenCentral()
+        //mavenLocal()
+        maven { url "https://maven.teamccp.com/content/groups/master" }
+        flatDir { dirs '/repo' }  //For local repos
+    }
+
+}
+
+subprojects {
+
+    apply plugin: 'java'
+    apply plugin: 'maven'
+    apply plugin: 'idea'
+    apply plugin: 'eclipse'
+
+    eclipse {
+        classpath {
+            //plusConfigurations += configurations.provided
+            downloadSources = true
+            downloadJavadoc = true
+        }
+    }
+
+    idea {
+        module {
+            languageLevel = '1.8'
+            //scopes.PROVIDED.plus += configurations.provided
+        }
+    }
+
+// Force re-download all dependencies - wil be slow dependencies (containing changing: true)
+    configurations.all {
+        // Check for updates every build
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+
+    ////////////////////////////////////////Build section////////////////////////////////////////
+    test << {
+
+        //classpath += files("${projectDir}/src/test/resources")
+        classpath = project.runtimeClasspath + project.sourceSets.test.runtimeClasspath + files("${projectDir}/src/test/resources") + files("${projectDir}/src/main/java")
+        //classpath.each { println it }
+
+        include "${projectDir}/src/test/java/**"
+
+        // listen to events in the test execution lifecycle
+        beforeTest { descriptor ->
+            logger.lifecycle("Running test: " + descriptor)
+        }
+
+        // listen to standard out and standard error of the test JVM(s)
+        onOutput { descriptor, event ->
+            logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message )
+        }
+
+    }
+    task printClasspath << {
+        doLast {
+            configurations.testRuntime.each { println it }
+        }
+    }
+
+
+    ////////////////////////////////////////Maven upload section////////////////////////////////////////
+    artifacts {
+        def zipFile = new File("$projectDir/build/distributions/$project.name" + '.zip')
+        archives(zipFile)
+
+    }
+
+    uploadArchives {
+        configuration = configurations.archives
+        repositories {
+            mavenDeployer {
+                // Fake-set properties here to allow Gradle to run; deployment
+                // credentials are set on the Bamboo server
+                if (!hasProperty('mavenUser')) {
+                    ext.mavenUser = "${System.env.bambooMavenUser}"
+                }
+                if (!hasProperty('mavenPassword')) {
+                    ext.mavenPassword = "${System.env.bambooMavenPassword}"
+                }
+                snapshotRepository(url: 'https://maven.teamccp.com/content/repositories/ccp-deployables-snapshots') {
+                    authentication(userName: ext.mavenUser, password: ext.mavenPassword)
+                }
+                repository(url: 'https://maven.teamccp.com/content/repositories/ccp-deployables-releases') {
+                    authentication(userName: ext.mavenUser, password: ext.mavenPassword)
+                }
+
+                pom.project {
+                    pom.groupId = project.groupId
+                    pom.artifactId = project.name
+                    pom.version = project.projectVersion
+                }
+
+                uniqueVersion=false
+
+            }
+        }
+    }
+
+
+}
