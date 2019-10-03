@@ -1,6 +1,6 @@
 //Jenkinsfile
 
-def BUILD_BASE_PATH="/opt/"
+env.BUILD_BASE_PATH="/opt/"
 def BUILD_DIR="temp"
 def REPO_TO_BUILD="IpGatewayProvisioning"
 def BUILD_SCRIPTS_REPO="bamboo_deployment_projects"
