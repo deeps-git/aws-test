@@ -1,11 +1,11 @@
 //Jenkinsfile
 
 env.BUILD_BASE_PATH="/opt/"
-def BUILD_DIR="temp"
-def REPO_TO_BUILD="IpGatewayProvisioning"
-def BUILD_SCRIPTS_REPO="bamboo_deployment_projects"
-def BUILD_MAVEN_PATH="com/comcast/xcal/crpl/awslambda/support"
-def REPO_URL="https://github.com/deeps-git/bamboo_deployment_projects.git"
+env.BUILD_DIR="temp"
+env.REPO_TO_BUILD="IpGatewayProvisioning"
+env.BUILD_SCRIPTS_REPO="bamboo_deployment_projects"
+env.BUILD_MAVEN_PATH="com/comcast/xcal/crpl/awslambda/support"
+env.REPO_URL="https://github.com/deeps-git/bamboo_deployment_projects.git"
 
 pipeline {
   agent any
