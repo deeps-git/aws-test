@@ -36,9 +36,11 @@ pipeline {
       }
          stage('Checking release version') {
                steps {
+                  script{
                   echo 'Checking build type'
+                  sh 'pushd ${BUILD_BASE_PATH}/${BUILD_DIR}/${REPO_TO_BUILD}'
            }
          }
       }
-
+    }
 }
