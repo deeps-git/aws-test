@@ -39,6 +39,7 @@ pipeline {
                   script{
                   echo 'Checking build type'
                   sh 'pushd ${BUILD_BASE_PATH}/${BUILD_DIR}/${REPO_TO_BUILD}'
+                  sh 'releaseVersion=$(./gradlew properties | grep releaseVersion | cut -d" " -f2);'
            }
          }
       }
