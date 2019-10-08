@@ -30,7 +30,13 @@ pipeline {
                echo "REPO_URL is ${REPO_URL}"
                sh 'whoami'
                sh 'cd /Users/Shared/Jenkins/Home/workspace/aws-terraform/CRPLSupportFunctions_scripts/workingSetup/ && ./gitpull.sh'
-               echo "Checking build type"
+              // echo "Checking build type"
+               //sh 'pushd ${BUILD_BASE_PATH}/${BUILD_DIR}/${REPO_TO_BUILD}'
+           }
+      }
+         stage('Test') {
+               steps {
+                 echo "Checking build type"
            }
            }
       }
