@@ -28,8 +28,9 @@ pipeline {
                echo "BUILD_SCRIPTS_REPO is ${BUILD_SCRIPTS_REPO}"
                echo "BUILD_MAVEN_PATH is ${BUILD_MAVEN_PATH}"
                echo "REPO_URL is ${REPO_URL}"
-                 sh 'whoami'
-                 sh 'cd /Users/Shared/Jenkins/Home/workspace/aws-terraform/CRPLSupportFunctions_scripts/workingSetup/ && ./gitpull.sh'
+               sh 'whoami'
+               sh 'cd /Users/Shared/Jenkins/Home/workspace/aws-terraform/CRPLSupportFunctions_scripts/workingSetup/ && ./gitpull.sh'
+               echo "Checking build type"
            }
            }
       }
