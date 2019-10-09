@@ -48,7 +48,7 @@ pipeline {
                   echo "Looks like a Staging build, releaseVersion="${releaseVersion}
                   ENVIRONMENT="Stage"
                   echo "Creating tag"
-                  git tag -a ${releaseVersion} -m "${releaseVersion}"
+                  git tag -a ${releaseVersion} '-m' "${releaseVersion}"
                   git push --follow-tags
                   echo "Running Gradle wrapper to -::::rebuild clean install uploadArchives::::-"
                     }
