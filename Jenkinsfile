@@ -40,18 +40,19 @@ pipeline {
                   echo 'Checking build type'
                   sh 'pushd ${BUILD_BASE_PATH}/${BUILD_DIR}/${REPO_TO_BUILD}'
                   sh 'releaseVersion=$(./gradlew properties | grep releaseVersion | cut -d" " -f2);'
-             if (${releaseVersion}) then
+                    if (${releaseVersion}) {
                   releaseVersion="0-SNAPSHOT"
                   ENVIRONMENT="Dev"
                   echo "Looks like a Dev build, releaseVersion=0-SNAPSHOT"
-             else
+                    } else {
                   echo "Looks like a Staging build, releaseVersion="${releaseVersion}
                   ENVIRONMENT="Stage"
                   echo "Creating tag"
                   git tag -a ${releaseVersion} -m"${releaseVersion}"
                   git push --follow-tags
                   echo "Running Gradle wrapper to -::::rebuild clean install uploadArchives::::-"
-               fi
+                    }
+               //fi
             //git fetch --tags ${REPO_URL}
                     
            }
