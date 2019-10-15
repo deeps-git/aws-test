@@ -54,7 +54,9 @@ pipeline {
                  echo "Running Gradle wrapper to -::::rebuild clean install uploadArchives::::-"
              fi
          ''' 
-            
+            sh 'git fetch --tags ${REPO_URL}'
+            env.RELEASE_VERSION=${releaseVersion}
+            env.ENVIRONMENT="-"${ENVIRONMENT};
            }
          }
       }
