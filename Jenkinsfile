@@ -55,8 +55,10 @@ pipeline {
              fi
          ''' 
             sh 'git fetch --tags ${REPO_URL}'
+         sh '''
             env.RELEASE_VERSION=${releaseVersion}
             env.ENVIRONMENT="-"${ENVIRONMENT};
+            '''
            }
          }
       }
