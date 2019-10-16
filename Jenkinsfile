@@ -56,6 +56,12 @@ pipeline {
                git fetch --tags ${REPO_URL}
                export RELEASE_VERSION=${releaseVersion}
                export ENVIRONMENT="-"${ENVIRONMENT};
+              ./gradlew -C rebuild clean build uploadArchives -i
+               popd
+
+               echo "Following are the projects:"
+               echo ""
+               ./pnameprocess.sh
          ''' 
            }
          }
