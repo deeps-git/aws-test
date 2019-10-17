@@ -21,7 +21,9 @@ pipeline {
                sh 'export REPO_URL=git@github.comcast.com:CRPL/bamboo_deployment_projects.git'
                */
                echo 'Checking out bamboo_deployment_projects.git'
+               dir('bamboo') {
                git branch: 'master', credentialsId: 'testing', url: 'https://github.com/deeps-git/bamboo_deployment_projects.git'
+               }
                dir('a-child-repo') {
                git branch: 'master', credentialsId: 'testing', url: 'https://github.com/deeps-git/IpGatewayProvisioning.git'
                  }
